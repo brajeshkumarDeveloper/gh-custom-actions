@@ -1,31 +1,66 @@
-name: 'Get & Cache Dependencies'
-description: 'Get the dependencies (via python) and cache team.'
+name: "Get & Cache Dependencies"
+description: "Install Python dependencies and optionally cache pip packages."
+
 inputs:
-  caching::
-    description: 'Wheater to cache dependencies or not.'
+  caching:
+    description: "Whether to cache dependencies or not"
     required: false
-    default: 'true'
+    default: "true"
+
 outputs:
   used-cache:
-    description: 'Whether the cache was used.'
-    value: ${{steps.install.outputs.cache }}
-runs: 
-  using: 'composite'
-  steps: 
-    - name: Cache dependencies
-      if: inputs.caching == 'true'
+    description: "Whether pip cache was used"
+    value: ${{ steps.cache.outputs.cache-hit }}
+
+runs:
+  using: "composite"
+  steps:
+    - name: Cache pip dependencies
+      if: ${{ inputs.caching == 'true' }}
       id: cache
       uses: actions/cache@v3
       with:
         path: ~/.cache/pip
-        key: ${{runner.os}}-pip-${{ hashFiles('**/requirements.txt')}}
-        restore-key: |
+        key: ${{ runner.os }}-pip-${{ hashFiles('**/requirements.txt') }}
+        restore-keys: |
           ${{ runner.os }}-pip-
 
-    - name: Install Dependencies
-      if: steps.cache.outputs.cache-hit !='true' || inputs.caching != 'true'
+    - name: Install dependencies
+      if: ${{ inputs.caching != 'true' || steps.cache.outputs.cache-hit != 'true' }}
       run: |
         python -m pip install --upgrade pip
         pip install -r requirements.txt
-        echo "::set-output name=cache::${{inputs.caching}}"
       shell: bash
+
+
+# name: 'Get & Cache Dependencies'
+# description: 'Get the dependencies (via python) and cache team.'
+# inputs:
+#   caching::
+#     description: 'Wheater to cache dependencies or not.'
+#     required: false
+#     default: 'true'
+# outputs:
+#   used-cache:
+#     description: 'Whether the cache was used.'
+#     value: ${{steps.install.outputs.cache }}
+# runs: 
+#   using: 'composite'
+#   steps: 
+#     - name: Cache dependencies
+#       if: inputs.caching == 'true'
+#       id: cache
+#       uses: actions/cache@v3
+#       with:
+#         path: ~/.cache/pip
+#         key: ${{runner.os}}-pip-${{ hashFiles('**/requirements.txt')}}
+#         restore-key: |
+#           ${{ runner.os }}-pip-
+
+#     - name: Install Dependencies
+#       if: steps.cache.outputs.cache-hit !='true' || inputs.caching != 'true'
+#       run: |
+#         python -m pip install --upgrade pip
+#         pip install -r requirements.txt
+#         echo "::set-output name=cache::${{inputs.caching}}"
+#       shell: bash
